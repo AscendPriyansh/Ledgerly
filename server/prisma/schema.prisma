@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  phone     String   @unique
+  name      String?
+  avatarUrl String?
+  email     String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  loans     Loan[]
+}
+
+model OtpChallenge {
+  id         String   @id @default(cuid())
+  phone      String
+  otpHash    String
+  expiresAt  DateTime
+  attempts   Int      @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([phone, createdAt])
+}
+
+model Loan {
+  id          String       @id @default(cuid())
+  userId      String
+  friendName  String
+  amount      Decimal      @db.Decimal(12, 2)
+  dueDate     DateTime
+  status      LoanStatus   @default(OUTSTANDING)
+  note        String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  repayments  Repayment[]
+
+  @@index([userId, dueDate])
+  @@index([userId, status])
+}
+
+model Repayment {
+  id        String   @id @default(cuid())
+  loanId    String
+  amount    Decimal  @db.Decimal(12, 2)
+  repaidAt  DateTime @default(now())
+  loan      Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@index([loanId])
+}
+
+enum LoanStatus {
+  OUTSTANDING
+  REPAID
+}
