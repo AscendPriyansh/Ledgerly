@@ -7,7 +7,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { ArrowLeft, Delete, RotateCcw, CheckCircle2 } from 'lucide-react-native';
+import { ArrowLeft, Delete, RotateCcw, CheckCircle2, Sparkles, KeyRound } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Screen } from '../../src/components/Screen';
 import { Radii, Spacing, Typography } from '../../src/constants/theme';
@@ -19,14 +19,21 @@ import { ApiError } from '../../src/api/client';
 export default function VerifyOtpScreen() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
-  const params = useLocalSearchParams<{ phone: string }>();
+  const params = useLocalSearchParams<{ phone: string; mockOtp?: string }>();
   const phone = params.phone || '+91 98765 43210';
+  const [mockOtp, setMockOtp] = useState<string>(params.mockOtp || '123456');
   const { login } = useAuth();
 
   const [otp, setOtp] = useState('');
   const [apiError, setApiError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(56);
   const [isVerifying, setIsVerifying] = useState(false);
+
+  useEffect(() => {
+    if (params.mockOtp) {
+      setMockOtp(params.mockOtp);
+    }
+  }, [params.mockOtp]);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -56,6 +63,14 @@ export default function VerifyOtpScreen() {
     setOtp(otp.slice(0, -1));
   };
 
+  const handleAutoFillMockOtp = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {}
+    setOtp(mockOtp);
+    verifyCode(mockOtp);
+  };
+
   const verifyCode = async (codeToVerify: string) => {
     setIsVerifying(true);
     setApiError(null);
@@ -79,7 +94,10 @@ export default function VerifyOtpScreen() {
     if (resendCooldown > 0) return;
     setApiError(null);
     try {
-      await authApi.requestOtp(phone);
+      const res = await authApi.requestOtp(phone);
+      if (res.mockOtp) {
+        setMockOtp(res.mockOtp);
+      }
       setResendCooldown(60);
     } catch (err: any) {
       setApiError(err?.message || 'Failed to resend OTP.');
@@ -96,6 +114,55 @@ export default function VerifyOtpScreen() {
           activeOpacity={0.7}
         >
           <ArrowLeft size={22} color={colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Prominent Mock OTP Announcement Banner */}
+      <View
+        style={[
+          styles.mockOtpBanner,
+          {
+            backgroundColor: isDark ? 'rgba(32, 138, 239, 0.12)' : '#EFF6FF',
+            borderColor: isDark ? 'rgba(32, 138, 239, 0.4)' : '#BFDBFE',
+          },
+        ]}
+      >
+        <View style={styles.mockOtpTopRow}>
+          <View style={styles.mockOtpBadge}>
+            <Sparkles size={14} color={colors.primary} />
+            <Text style={[styles.mockOtpBadgeText, { color: colors.primary }]}>MOCK OTP NOTICE</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.autoFillBtn, { backgroundColor: colors.primary }]}
+            onPress={handleAutoFillMockOtp}
+            activeOpacity={0.8}
+            disabled={isVerifying}
+          >
+            <Text style={styles.autoFillBtnText}>Auto-Fill OTP</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={[styles.mockOtpNoticeText, { color: colors.textSecondary }]}>
+          SMS delivery is simulated for testing. This is your mock OTP:
+        </Text>
+
+        <TouchableOpacity
+          style={[
+            styles.mockOtpCard,
+            {
+              backgroundColor: colors.surface,
+              borderColor: isDark ? 'rgba(32, 138, 239, 0.3)' : '#DBEAFE',
+            },
+          ]}
+          onPress={handleAutoFillMockOtp}
+          activeOpacity={0.7}
+          disabled={isVerifying}
+        >
+          <View style={styles.mockOtpCodeGroup}>
+            <KeyRound size={18} color={colors.primary} />
+            <Text style={[styles.mockOtpDisplayCode, { color: colors.primary }]}>{mockOtp}</Text>
+          </View>
+          <Text style={[styles.mockOtpClickHint, { color: colors.textMuted }]}>Tap to use</Text>
         </TouchableOpacity>
       </View>
 
@@ -228,13 +295,73 @@ const styles = StyleSheet.create({
   },
   topNav: {
     alignItems: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   backButton: {
     padding: 6,
   },
+  mockOtpBanner: {
+    borderWidth: 1,
+    borderRadius: Radii.lg,
+    padding: Spacing.md,
+    marginBottom: 20,
+  },
+  mockOtpTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  mockOtpBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  mockOtpBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  autoFillBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radii.full,
+  },
+  autoFillBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  mockOtpNoticeText: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  mockOtpCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 10,
+    borderRadius: Radii.md,
+    borderWidth: 1,
+  },
+  mockOtpCodeGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  mockOtpDisplayCode: {
+    fontSize: 18,
+    fontWeight: '800',
+    letterSpacing: 3,
+  },
+  mockOtpClickHint: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
   header: {
-    marginBottom: 28,
+    marginBottom: 24,
   },
   title: {
     ...Typography.h2,

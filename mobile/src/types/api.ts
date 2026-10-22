@@ -31,6 +31,7 @@ export interface RequestOtpPayload {
 export interface RequestOtpResponse {
   message: string;
   expiresInSeconds: number;
+  mockOtp?: string;
 }
 
 export interface VerifyOtpPayload {

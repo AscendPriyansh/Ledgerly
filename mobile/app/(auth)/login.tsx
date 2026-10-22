@@ -46,11 +46,14 @@ export default function LoginScreen() {
         fullPhone = `+91${fullPhone.replace(/^0+/, '')}`;
       }
 
-      await authApi.requestOtp(fullPhone);
+      const res = await authApi.requestOtp(fullPhone);
 
       router.push({
         pathname: '/(auth)/verify-otp',
-        params: { phone: fullPhone },
+        params: {
+          phone: fullPhone,
+          ...(res.mockOtp ? { mockOtp: res.mockOtp } : {}),
+        },
       });
     } catch (err: any) {
       if (err instanceof ApiError) {
