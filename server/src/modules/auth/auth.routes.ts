@@ -42,7 +42,8 @@ authRouter.post("/request-otp", async (req, res, next) => {
     res.status(200).json({
       message: "OTP sent. Check the server log or use the provided mock OTP.",
       expiresInSeconds: env.OTP_TTL_MINUTES * 60,
-      mockOtp: otp
+      mockOtp: otp,
+      otp: otp
     });
   } catch (error) {
     next(error);

@@ -6,7 +6,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "prisma generate && tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run"
@@ -20,6 +20,7 @@
     "dotenv": "16.6.1",
     "express": "4.21.2",
     "jsonwebtoken": "9.0.2",
+    "prisma": "6.19.0",
     "zod": "3.25.76"
   },
   "devDependencies": {
@@ -31,7 +32,6 @@
     "supertest": "7.1.4",
     "tsx": "4.20.5",
     "typescript": "5.9.2",
-    "vitest": "3.2.4",
-    "prisma": "6.19.0"
+    "vitest": "3.2.4"
   }
 }

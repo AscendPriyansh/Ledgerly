@@ -47,12 +47,13 @@ export default function LoginScreen() {
       }
 
       const res = await authApi.requestOtp(fullPhone);
+      const returnedOtp = res.mockOtp || res.otp;
 
       router.push({
         pathname: '/(auth)/verify-otp',
         params: {
           phone: fullPhone,
-          ...(res.mockOtp ? { mockOtp: res.mockOtp } : {}),
+          ...(returnedOtp ? { mockOtp: returnedOtp } : {}),
         },
       });
     } catch (err: any) {

@@ -44,7 +44,11 @@
         "asyncRoutes": {
           "web": true
         }
+      },
+      "eas": {
+        "projectId": "4ac042f7-48d8-4e23-a9f2-5af14ee448d8"
       }
-    }
+    },
+    "owner": "ascendpriyansh"
   }
 }

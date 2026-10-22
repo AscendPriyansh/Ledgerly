@@ -21,7 +21,7 @@ export default function VerifyOtpScreen() {
   const { colors, isDark } = useTheme();
   const params = useLocalSearchParams<{ phone: string; mockOtp?: string }>();
   const phone = params.phone || '+91 98765 43210';
-  const [mockOtp, setMockOtp] = useState<string>(params.mockOtp || '123456');
+  const [mockOtp, setMockOtp] = useState<string | null>(params.mockOtp || null);
   const { login } = useAuth();
 
   const [otp, setOtp] = useState('');
@@ -64,6 +64,7 @@ export default function VerifyOtpScreen() {
   };
 
   const handleAutoFillMockOtp = () => {
+    if (!mockOtp) return;
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     } catch {}
@@ -95,8 +96,9 @@ export default function VerifyOtpScreen() {
     setApiError(null);
     try {
       const res = await authApi.requestOtp(phone);
-      if (res.mockOtp) {
-        setMockOtp(res.mockOtp);
+      const newOtp = res.mockOtp || res.otp;
+      if (newOtp) {
+        setMockOtp(newOtp);
       }
       setResendCooldown(60);
     } catch (err: any) {
@@ -132,38 +134,48 @@ export default function VerifyOtpScreen() {
             <Sparkles size={14} color={colors.primary} />
             <Text style={[styles.mockOtpBadgeText, { color: colors.primary }]}>MOCK OTP NOTICE</Text>
           </View>
-          <TouchableOpacity
-            style={[styles.autoFillBtn, { backgroundColor: colors.primary }]}
-            onPress={handleAutoFillMockOtp}
-            activeOpacity={0.8}
-            disabled={isVerifying}
-          >
-            <Text style={styles.autoFillBtnText}>Auto-Fill OTP</Text>
-          </TouchableOpacity>
+          {!!mockOtp && (
+            <TouchableOpacity
+              style={[styles.autoFillBtn, { backgroundColor: colors.primary }]}
+              onPress={handleAutoFillMockOtp}
+              activeOpacity={0.8}
+              disabled={isVerifying}
+            >
+              <Text style={styles.autoFillBtnText}>Auto-Fill OTP</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        <Text style={[styles.mockOtpNoticeText, { color: colors.textSecondary }]}>
-          SMS delivery is simulated for testing. This is your mock OTP:
-        </Text>
+        {mockOtp ? (
+          <>
+            <Text style={[styles.mockOtpNoticeText, { color: colors.textSecondary }]}>
+              SMS delivery is simulated. Use this exact generated OTP to log in:
+            </Text>
 
-        <TouchableOpacity
-          style={[
-            styles.mockOtpCard,
-            {
-              backgroundColor: colors.surface,
-              borderColor: isDark ? 'rgba(32, 138, 239, 0.3)' : '#DBEAFE',
-            },
-          ]}
-          onPress={handleAutoFillMockOtp}
-          activeOpacity={0.7}
-          disabled={isVerifying}
-        >
-          <View style={styles.mockOtpCodeGroup}>
-            <KeyRound size={18} color={colors.primary} />
-            <Text style={[styles.mockOtpDisplayCode, { color: colors.primary }]}>{mockOtp}</Text>
-          </View>
-          <Text style={[styles.mockOtpClickHint, { color: colors.textMuted }]}>Tap to use</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.mockOtpCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: isDark ? 'rgba(32, 138, 239, 0.3)' : '#DBEAFE',
+                },
+              ]}
+              onPress={handleAutoFillMockOtp}
+              activeOpacity={0.7}
+              disabled={isVerifying}
+            >
+              <View style={styles.mockOtpCodeGroup}>
+                <KeyRound size={18} color={colors.primary} />
+                <Text style={[styles.mockOtpDisplayCode, { color: colors.primary }]}>{mockOtp}</Text>
+              </View>
+              <Text style={[styles.mockOtpClickHint, { color: colors.textMuted }]}>Tap to use</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <Text style={[styles.mockOtpNoticeText, { color: colors.textSecondary, marginBottom: 0 }]}>
+            Your backend on Render hasn't been redeployed with the latest commit yet. Once you trigger a deploy on Render, the exact live OTP will appear right here.
+          </Text>
+        )}
       </View>
 
       {/* Header */}
